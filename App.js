@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 // import Camera from './views/camera';
 // import CameraModal from './views/cameraModal';
 // import Index from './views/index';
+import Gallery from './gallery';
+
 import {
   StyleSheet,
   Text,
@@ -10,22 +12,31 @@ import {
   Modal,
   Button,
   Vibration,
+  AsyncStorage,
   TouchableOpacity,
 } from 'react-native';
 import { Constants, FileSystem, Camera, Permissions } from 'expo';
 
 export default class App extends Component {
+  // constructor(props) {
+  //   super(props);
   state = {
-    modalVisible: false,
+    cameraVisible: false,
+    galleryVisibile: false,
     hasCameraPermission: null,
+    permissionsGranted: false,
     type: Camera.Constants.Type.back,
+    showGallery: false,
+    galleryId: 0,
     photoId: 1,
     photos: [],
+    autoFocus: 'off',
   };
+  // }
 
   async componentWillMount() {
     const { status } = await Permissions.askAsync(Permissions.CAMERA);
-    this.setState({ hasCameraPermission: status === 'granted' });
+    this.setState({ hasCameraPermissions: status === 'granted' });
   }
 
   componentDidMount() {
@@ -50,97 +61,102 @@ export default class App extends Component {
     }
   };
 
-  openModal() {
-    this.setState({ modalVisible: true });
+  toggleFocus() {
+    this.setState({
+      autoFocus: this.state.autoFocus === 'on' ? 'off' : 'on',
+    });
   }
 
-  closeModal() {
-    this.setState({ modalVisible: false });
+  openCamera() {
+    this.setState({ cameraVisible: true });
   }
+
+  closeCamera() {
+    this.setState({ cameraVisible: false });
+  }
+
+  // openGallery() {
+  //   this.setState({ galleryVisibile: true });
+  // }
+
+  // closeGallery() {
+  //   this.setState({ galleryVisibile: false })
+  // }
+
+  // renderGallery() {
+  //   return <Gallery onPress={this.toggleView.bind(this)} />;
+  // }
+
+
 
   render() {
-    const { hasCameraPermission } = this.state;
-    if (hasCameraPermission === null) {
-      return <View />;
-    } else if (hasCameraPermission === false) {
-      return <Text>No access to camera</Text>;
-    } else {
-      return (
-        <View style={styles.container}>
-          <Text style={styles.title}>Welcome to Family Photo</Text>
-          <Text style={styles.text}> Take a picture!</Text>
-          {/* credit later taken from https://www.flaticon.com/free-icon/photo-camera_3901#term=camera&page=1&position=8 */}
 
-          <Modal
-            visible={this.state.modalVisible}
-            animationType={'slide'}
-            onRequestClose={() => this.closeModal()}
-          >
-            <View style={styles.cameraContainer}>
-              {/* <View style={styles.innerContainer}> */}
-              <Camera ref={ref => {
-                this.camera = ref;
-              }}
+    // const showGallery = this.state.showGallery
+    //   ? this.renderGallery()
+    //   : this. 
+
+    // const cameraScreenContent = this.state.permissionsGranted
+    //   ? this.renderCamera()
+    //   : this.renderNoPermissions();
+    // const content = this.state.showGallery ? this.renderGallery() : cameraScreenContent;
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome to Family Photo</Text>
+        <Text style={styles.text}> Take a picture!</Text>
+        {/* credit later taken from https://www.flaticon.com/free-icon/photo-camera_3901#term=camera&page=1&position=8 */}
+
+        <Modal
+          visible={this.state.cameraVisible}
+          animationType={'slide'}
+          onRequestClose={() => this.closeCamera()}
+        >
+          <View style={styles.cameraContainer}>
+            <Camera ref={ref => {
+              this.camera = ref;
+            }}
+              autoFocus={this.state.autoFocus}
+              type={this.state.type}
+              style={{
+                flex: 1,
+              }} style={{ flex: 1 }} type={this.state.type}>
+              <View
                 style={{
                   flex: 1,
-                }} style={{ flex: 1 }} type={this.state.type}>
-                <View
-                  style={{
-                    flex: 1,
-                    backgroundColor: 'transparent',
-                  }}>
-                  <Button
-                    style={{
-                      flex: 0.1,
-                      alignSelf: 'flex-end',
-                      alignItems: 'center',
-                    }}
-                    onPress={this.takePicture.bind(this)}
-                    title="SNAP">
-                    {/* <Text style={{ fontSize: 30, color: 'white', margin: 10 }}>
-                        {' '}SNAP{' '}
-                      </Text> */}
-                  </Button>
-                  {/* <TouchableOpacity
-                      style={{
-                        flex: 0.1,
-                        alignSelf: 'flex-end',
-                        alignItems: 'center',
-                      }}
-                      onPress={() => {
-                        this.setState({
-                          type: this.state.type === Camera.Constants.Type.back
-                            ? Camera.Constants.Type.front
-                            : Camera.Constants.Type.back,
-                        });
-                      }}>
-                      <Text
-                        style={{ fontSize: 30, marginBottom: 10, color: 'white' }}>
-                        {' '}Flip{' '}
-                      </Text>
-                    </TouchableOpacity> */}
-                </View>
-              </Camera>
-              <Button
-                onPress={() => this.closeModal()}
-                style={{ fontSize: 30, fex: 1, marginTop: 50, color: 'white' }}
-                title="Close camera"
-              >
-              </Button>
-              {/* </View> */}
-            </View>
-          </Modal>
+                  backgroundColor: 'transparent',
+                }}>
+                <TouchableOpacity
+                  onPress={this.takePicture.bind(this)}
+                >
+                  <Text style={styles.cameraButton}>SNAP</Text>
+                </TouchableOpacity>
+              </View>
+            </Camera>
+            {/* <View style={styles.container}>{content}</View>; */}
+          </View>
 
-          <TouchableOpacity onPress={() => this.openModal()}>
-            <Image style={styles.icon} source={require('./photo-camera.png')} />
+          <TouchableOpacity
+            onPress={() => this.closeCamera()}
+          >
+            <Text style={styles.cameraButton}>Close Camera</Text>
           </TouchableOpacity>
+        </Modal>
 
-          <Text style={styles.text}> View existing pictures</Text>
-        </View>
-      );
-    }
+        <TouchableOpacity onPress={() => this.openCamera()}>
+          <Image style={styles.icon} source={require('./photo-camera.png')} />
+        </TouchableOpacity>
+
+        <Text style={styles.text}> View existing pictures</Text>
+
+        {/* <TouchableOpacity onPress={() => this.openGallery()}> */}
+        <Image style={styles.icon} source={require('./image-gallery.png')} />
+        <Gallery></Gallery>
+        {/* </TouchableOpacity> */}
+
+      </View>
+    );
   }
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -160,6 +176,15 @@ const styles = StyleSheet.create({
   icon: {
     width: 50,
     height: 50,
+  },
+  cameraButton: {
+    fontSize: 30,
+    marginHorizontal: 2,
+    color: 'white',
+    borderRadius: 8,
+    borderColor: 'white',
+    borderWidth: 1,
+    padding: 5,
   },
   cameraContainer: {
     flex: 1,
