@@ -31,9 +31,6 @@ export default class Gallery extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <TouchableOpacity style={styles.backButton} onPress={this.props.onPress}>
-          <Text>Back</Text>
-        </TouchableOpacity>
         <ScrollView contentComponentStyle={{ flex: 1 }}>
           <View style={styles.pictures}>
             {this.state.photos.map(photoUri => (
@@ -57,7 +54,8 @@ export default class Gallery extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 20,
+    paddingTop: 0,
+    position: 'relative',
   },
   pictures: {
     flex: 1,
@@ -66,20 +64,15 @@ const styles = StyleSheet.create({
   },
   picture: {
     position: 'absolute',
-    bottom: 0,
     right: 0,
     left: 0,
     top: 0,
+    bottom: 0,
     resizeMode: 'contain',
   },
   pictureWrapper: {
     width: pictureSize,
     height: pictureSize,
     margin: 5,
-  },
-  backButton: {
-    padding: 20,
-    marginBottom: 4,
-    backgroundColor: 'indianred',
   },
 });

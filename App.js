@@ -15,6 +15,12 @@ import {
   AsyncStorage,
   TouchableOpacity,
 } from 'react-native';
+
+const images = {
+  galleryIcon: require('./image-gallery.png'),
+  cameraIcon: require('./photo-camera.png')
+}
+
 import { Constants, FileSystem, Camera, Permissions } from 'expo';
 
 export default class App extends Component {
@@ -23,14 +29,13 @@ export default class App extends Component {
   state = {
     cameraVisible: false,
     galleryVisibile: false,
+    previewVisibile: false,
     hasCameraPermission: null,
     permissionsGranted: false,
     type: Camera.Constants.Type.back,
-    showGallery: false,
-    galleryId: 0,
     photoId: 1,
     photos: [],
-    autoFocus: 'off',
+    autoFocus: 'on',
   };
   // }
 
@@ -47,58 +52,91 @@ export default class App extends Component {
 
   takePicture = async function () {
     if (this.camera) {
-      this.camera.takePictureAsync().then(data => {
-        FileSystem.moveAsync({
-          from: data.uri,
-          to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
-        }).then(() => {
-          this.setState({
-            photoId: this.state.photoId + 1,
-          });
-          Vibration.vibrate();
+      this.camera.takePictureAsync()
+        .then(data => {
+          //before the move, preview screen pops up
+          //ask for title and save
+          FileSystem.moveAsync({
+            from: data.uri,
+            to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
+          }).then(() => {
+            this.setState({
+              photoId: this.state.photoId + 1
+            });
+            Vibration.vibrate();
+          }).then(this.printImageUri(data.uri))
+            .catch(err => console.error("error: " + err));
         });
-      });
     }
   };
 
-  toggleFocus() {
-    this.setState({
-      autoFocus: this.state.autoFocus === 'on' ? 'off' : 'on',
-    });
+  deleteAllGallery = async function () {
+    FileSystem.deleteAsync(FileSystem.documentDirectory + 'photos').catch(e => {
+      console.log(e, 'Directory and files deleted');
+    })
+  };
+
+  printImageUri(imagePath) {
+    console.log(imagePath)
   }
 
-  openCamera() {
-    this.setState({ cameraVisible: true });
+  toggleCamera() {
+    this.setState({ cameraVisible: !this.state.cameraVisible });
   }
 
-  closeCamera() {
-    this.setState({ cameraVisible: false });
+  toggleGallery() {
+    this.setState({ galleryVisibile: !this.state.galleryVisibile });
   }
 
-  // openGallery() {
-  //   this.setState({ galleryVisibile: true });
+  openPreview() {
+    this.setState({ previewVisibile: true });
+  }
+
+  closePreview() {
+    this.setState({ previewVisibile: false });
+  }
+
+  renderGallery() {
+    return
+    <Gallery />;
+  }
+  renderGalleryIcon() {
+    return <Image style={styles.icon} source={images.galleryIcon} />;
+  }
+
+  renderLastTakenPicture() {
+    return
+    <Image
+      style={styles.icon}
+      source={{
+        uri: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`
+      }} />;
+  }
+  renderPreview() {
+    <View>
+      {/* <Text>Label it?</Text> */}
+      <Image
+        style={styles.icon}
+        source={{
+          uri: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`
+        }} />
+    </View>;
+  }
+
+  // renderNoPermissions() {
+  //   return (
+  //     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 10 }}>
+  //       <Text style={{ color: 'black' }}>
+  //         Camera permissions not granted - cannot open camera preview.
+  //       </Text>
+  //     </View>
+  //   );
   // }
-
-  // closeGallery() {
-  //   this.setState({ galleryVisibile: false })
-  // }
-
-  // renderGallery() {
-  //   return <Gallery onPress={this.toggleView.bind(this)} />;
-  // }
-
-
 
   render() {
-
-    // const showGallery = this.state.showGallery
-    //   ? this.renderGallery()
-    //   : this. 
-
-    // const cameraScreenContent = this.state.permissionsGranted
-    //   ? this.renderCamera()
-    //   : this.renderNoPermissions();
-    // const content = this.state.showGallery ? this.renderGallery() : cameraScreenContent;
+    const preview = this.state.previewVisibile ? this.renderPreview() : null;
+    const image = this.state.photoId > 1 ? this.renderLastTakenPicture() : this.renderGalleryIcon();
+    const content = this.state.galleryVisibile ? this.renderGallery() : this.renderGalleryIcon();
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Welcome to Family Photo</Text>
@@ -108,7 +146,7 @@ export default class App extends Component {
         <Modal
           visible={this.state.cameraVisible}
           animationType={'slide'}
-          onRequestClose={() => this.closeCamera()}
+          onRequestClose={() => this.toggleCamera()}
         >
           <View style={styles.cameraContainer}>
             <Camera ref={ref => {
@@ -125,33 +163,33 @@ export default class App extends Component {
                   backgroundColor: 'transparent',
                 }}>
                 <TouchableOpacity
-                  onPress={this.takePicture.bind(this)}
+                  onPress={
+                    this.takePicture.bind(this)}
                 >
                   <Text style={styles.cameraButton}>SNAP</Text>
                 </TouchableOpacity>
+                {/* <View> {preview} </View> */}
               </View>
+              <TouchableOpacity
+                onPress={() => this.toggleCamera()}
+              >
+                <Text style={styles.cameraButton}>Close Camera</Text>
+              </TouchableOpacity>
             </Camera>
-            {/* <View style={styles.container}>{content}</View>; */}
           </View>
-
-          <TouchableOpacity
-            onPress={() => this.closeCamera()}
-          >
-            <Text style={styles.cameraButton}>Close Camera</Text>
-          </TouchableOpacity>
         </Modal>
 
-        <TouchableOpacity onPress={() => this.openCamera()}>
-          <Image style={styles.icon} source={require('./photo-camera.png')} />
+        <TouchableOpacity onPress={() => this.toggleCamera()}>
+          <Image style={styles.icon} source={images.cameraIcon} />
         </TouchableOpacity>
-
+        {/* <TouchableOpacity onPress={() => this.deleteAllGallery.bind(this)}>
+          <Text style={styles.text}> delete directory</Text>
+        </TouchableOpacity> */}
+        {/* <Text style={styles.text}> last taken photo </Text> */}
         <Text style={styles.text}> View existing pictures</Text>
-
-        {/* <TouchableOpacity onPress={() => this.openGallery()}> */}
-        <Image style={styles.icon} source={require('./image-gallery.png')} />
-        <Gallery></Gallery>
-        {/* </TouchableOpacity> */}
-
+        <TouchableOpacity onPress={() => this.toggleGallery()}>
+          <View >{content}</View>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -176,6 +214,11 @@ const styles = StyleSheet.create({
   icon: {
     width: 50,
     height: 50,
+    padding: 20,
+  },
+  picture: {
+    height: 50,
+    width: 50,
   },
   cameraButton: {
     fontSize: 30,
