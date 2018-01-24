@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 // import CameraModal from './views/cameraModal';
 // import Index from './views/index';
 import Gallery from './gallery';
-
 import {
   StyleSheet,
   Text,
@@ -15,15 +14,18 @@ import {
   AsyncStorage,
   TouchableOpacity,
 } from 'react-native';
+import { Constants, FileSystem, Camera, Permissions } from 'expo';
+import { StackNavigator } from 'react-navigation';
 
 const images = {
   galleryIcon: require('./image-gallery.png'),
   cameraIcon: require('./photo-camera.png')
 }
 
-import { Constants, FileSystem, Camera, Permissions } from 'expo';
-
-export default class App extends Component {
+class HomeScreen extends React.Component {
+  static navigationOptions = {
+    title: 'Welcome'
+  };
   // constructor(props) {
   //   super(props);
   state = {
@@ -84,18 +86,6 @@ export default class App extends Component {
     this.setState({ cameraVisible: !this.state.cameraVisible });
   }
 
-  toggleGallery() {
-    this.setState({ galleryVisibile: !this.state.galleryVisibile });
-  }
-
-  openPreview() {
-    this.setState({ previewVisibile: true });
-  }
-
-  closePreview() {
-    this.setState({ previewVisibile: false });
-  }
-
   renderGallery() {
     return
     <Gallery />;
@@ -112,29 +102,9 @@ export default class App extends Component {
         uri: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`
       }} />;
   }
-  renderPreview() {
-    <View>
-      {/* <Text>Label it?</Text> */}
-      <Image
-        style={styles.icon}
-        source={{
-          uri: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`
-        }} />
-    </View>;
-  }
-
-  // renderNoPermissions() {
-  //   return (
-  //     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 10 }}>
-  //       <Text style={{ color: 'black' }}>
-  //         Camera permissions not granted - cannot open camera preview.
-  //       </Text>
-  //     </View>
-  //   );
-  // }
-
   render() {
-    const preview = this.state.previewVisibile ? this.renderPreview() : null;
+    const { navigate } = this.props.navigation;
+    //const preview = this.state.previewVisibile ? this.renderPreview() : null;
     const image = this.state.photoId > 1 ? this.renderLastTakenPicture() : this.renderGalleryIcon();
     const content = this.state.galleryVisibile ? this.renderGallery() : this.renderGalleryIcon();
     return (
@@ -187,10 +157,58 @@ export default class App extends Component {
         </TouchableOpacity> */}
         {/* <Text style={styles.text}> last taken photo </Text> */}
         <Text style={styles.text}> View existing pictures</Text>
-        <TouchableOpacity onPress={() => this.toggleGallery()}>
-          <View >{content}</View>
+        <TouchableOpacity onPress={() => navigate('Gallery')}>
+          <Image style={styles.icon} source={images.galleryIcon} />
+          {/* <View style={styles.imageContainer}>{content}</View> */}
         </TouchableOpacity>
       </View>
+    );
+  }
+}
+
+class GalleryScreen extends React.Component {
+  static navigationOptions = {
+    title: 'Gallery'
+  };
+  render() {
+    const { navigate } = this.props.navigation;
+    return (
+      <Gallery />
+    );
+  }
+}
+
+export const Home = StackNavigator({
+  Home: { screen: HomeScreen },
+  Gallery: { screen: GalleryScreen },
+});
+
+export default class App extends Component {
+
+  // renderPreview() {
+  //   <View>
+  //     {/* <Text>Label it?</Text> */}
+  //     <Image
+  //       style={styles.icon}
+  //       source={{
+  //         uri: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`
+  //       }} />
+  //   </View>;
+  // }
+
+  // renderNoPermissions() {
+  //   return (
+  //     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 10 }}>
+  //       <Text style={{ color: 'black' }}>
+  //         Camera permissions not granted - cannot open camera preview.
+  //       </Text>
+  //     </View>
+  //   );
+  // }
+
+  render() {
+    return (
+      <Home />
     );
   }
 }
@@ -199,9 +217,18 @@ export default class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 0,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  imageContainer: {
+    position: 'relative',
+    bottom: 0,
   },
   title: {
     fontSize: 20,
@@ -215,10 +242,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     padding: 20,
-  },
-  picture: {
-    height: 50,
-    width: 50,
   },
   cameraButton: {
     fontSize: 30,
