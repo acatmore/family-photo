@@ -41,6 +41,7 @@ class HomeScreen extends React.Component {
     photoId: 1,
     photos: [],
     autoFocus: 'on',
+    JSON: '',
   };
   // }
 
@@ -55,54 +56,35 @@ class HomeScreen extends React.Component {
     //   console.log(e, 'Directory and files deleted');
     // }),
     FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos').catch(e => {
-      console.log(e, 'Directory exists');
+      // console.log(e, 'Directory exists');
     });
-    // FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos/data.JSON').catch(e => {
-    //   console.log(e, 'JSON exists');
-    // });
   }
 
-  takePicture = async function () {
-    if (!this.camera) {
-      return
-    }
-    if (this.camera) {
-      this.camera.takePictureAsync()
-        .then(data => {
-          return JSON.stringify({
-            photoId: this.state.photoId,
-            uri: data.uri,
-            label: this.state.label,
-            folder: this.state.folder,
-          })
-        })
-        .then(data => {
-          return FileSystem.moveAsync({
-            from: this.state.JSON,
-            to: `${FileSystem.documentDirectory}photos/data.JSON`,
-          });
-        })
-        .then(data => {
-          //before the move, preview screen pops up
-          //ask for title and save
-          return FileSystem.moveAsync({
-            from: data.uri,
-            to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
-          });
-        })
-        .then(() => {
-          this.setState({
-            photoId: this.state.photoId + 1
-          });
-          console.log(`${FileSystem.documentDirectory}photos/data.JSON`);
-          Vibration.vibrate();
-        });
-    }
-  };
+  // takePicture = async function () {
+  //   if (!this.camera) {
+  //     return
+  //   }
+  //   if (this.camera) {
+  //     this.camera.takePictureAsync()
+  //       .then(data => {
+  //         return FileSystem.moveAsync({
+  //           from: data.uri,
+  //           to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
+  //         });
+  //       })
+  //       .then(() => {
+  //         this.setState({
+  //           photoId: this.state.photoId + 1
+  //         });
+  //         Vibration.vibrate();
+  //       });
+  //   }
+  // };
 
-  toggleCamera() {
-    this.setState({ cameraVisible: !this.state.cameraVisible });
+  previewAndSnap() {
+
   }
+
   render() {
     const { navigate } = this.props.navigation;
     //const preview = this.state.previewVisibile ? this.renderPreview() : null;
@@ -112,45 +94,7 @@ class HomeScreen extends React.Component {
       <View style={styles.container}>
         <Text style={styles.title}>Welcome to Family Photo</Text>
         <Text style={styles.text}> Take a picture!</Text>
-        {/* credit later taken from https://www.flaticon.com/free-icon/photo-camera_3901#term=camera&page=1&position=8 */}
-
-        <Modal
-          visible={this.state.cameraVisible}
-          animationType={'slide'}
-          onRequestClose={() => this.toggleCamera()}
-        >
-          <View style={styles.cameraContainer}>
-            <Camera ref={ref => {
-              this.camera = ref;
-            }}
-              autoFocus={this.state.autoFocus}
-              type={this.state.type}
-              style={{
-                flex: 1,
-              }} style={{ flex: 1 }} type={this.state.type}>
-              <View
-                style={{
-                  flex: 1,
-                  backgroundColor: 'transparent',
-                }}>
-                <TouchableOpacity
-                  onPress={
-                    this.takePicture.bind(this)}
-                >
-                  <Text style={styles.cameraButton}>SNAP</Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity onPress={() => this.toggleCamera()}>
-                <Text style={styles.cameraButton}>close</Text>
-              </TouchableOpacity>
-            </Camera>
-          </View>
-        </Modal>
-
-        {/* <TouchableOpacity onPress={() => navigate('Camera')}>
-          <Image style={styles.icon} source={images.cameraIcon} />
-        </TouchableOpacity> */}
-        <TouchableOpacity onPress={() => this.toggleCamera()}>
+        <TouchableOpacity onPress={() => navigate('Camera')}>
           <Image style={styles.icon} source={images.cameraIcon} />
         </TouchableOpacity>
 
@@ -195,9 +139,21 @@ class CameraScreen extends React.Component {
     }
     if (this.camera) {
       this.camera.takePictureAsync()
+        // .then(data => {
+        //   this.state.JSON = JSON.stringify({
+        //     photoId: this.state.photoId,
+        //     uri: data.uri,
+        //     label: this.state.label,
+        //     folder: this.state.folder,
+        //   })
+        // })
+        // .then(data => {
+        //   return FileSystem.moveAsync({
+        //     from: this.state.JSON,
+        //     to: `${FileSystem.documentDirectory}photos/Data_${this.state.photoId}.JSON`,
+        //   });
+        // })
         .then(data => {
-          //before the move, preview screen pops up
-          //ask for title and save
           return FileSystem.moveAsync({
             from: data.uri,
             to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
@@ -211,25 +167,6 @@ class CameraScreen extends React.Component {
         });
     }
   };
-
-  // .then(data => {
-  // JSON.stringify({
-  // photoId: this.state.photoId,
-  // uri: data.uri,
-  // label: this.state.label,
-  // folder: this.state.folder,
-  // });
-  // })
-
-  // .then(() => {
-  // this.setState({
-  // newPhoto: true,
-  // });
-  // });
-
-  // renderPreviewForm() {
-  // this.navigate('Preview');
-  // }
 
   render() {
     //const photoTaken = this.state.newPhoto ? renderPreviewForm() : null;
@@ -250,7 +187,7 @@ class CameraScreen extends React.Component {
               backgroundColor: 'transparent',
             }}>
             <TouchableOpacity
-              onPress={() => this.takePicture.bind(this)}
+              onPress={this.takePicture.bind(this)}
             >
               <Text style={styles.cameraButton}>SNAP</Text>
             </TouchableOpacity>

@@ -16,16 +16,21 @@ export default class Gallery extends React.Component {
   state = {
     images: {},
     photos: [],
+    data: [],
   };
 
   componentDidMount() {
     FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'photos').then(photos => {
-      this.setState(
-        {
-          photos,
-        }
-      );
-    });
+      this.setState({
+        photos,
+      });
+    }),
+      FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'photos/data.JSON').then(data => {
+        this.setState({
+          data,
+        }),
+          console.log(data);
+      });
   }
 
   render() {
@@ -44,6 +49,15 @@ export default class Gallery extends React.Component {
                 />
               </View>
             ))}
+            {/* {this.state.data.map(label => (
+              <View key={label}>
+                <FlatList
+                  data={[label]}
+                  renderItem={({ item }) => <Text>{item.label}
+                  </Text>}
+                />
+              </View>
+            ))} */}
           </View>
         </ScrollView>
       </View>
