@@ -24,37 +24,10 @@ export class HomeScreen extends React.Component {
     static navigationOptions = {
         title: 'Welcome'
     };
-    // constructor(props) {
-    //   super(props);
-    state = {
-        hasCameraPermission: null,
-        permissionsGranted: false,
-    };
-    // }
-
-    async componentWillMount() {
-        const { status } = await Permissions.askAsync(Permissions.CAMERA);
-        this.setState({ hasCameraPermissions: status === 'granted' });
-    }
-
-    componentDidMount() {
-        //delete old local files
-        // FileSystem.deleteAsync(FileSystem.documentDirectory + 'photos').catch(e => {
-        //   console.log(e, 'Directory and files deleted');
-        // }),
-        FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos').catch(e => {
-            // console.log(e, 'Directory exists');
-        });
-    }
-    previewAndSnap() {
-
-    }
 
     render() {
         const { navigate } = this.props.navigation;
-        //const preview = this.state.previewVisibile ? this.renderPreview() : null;
-        //const image = this.state.photoId > 1 ? this.renderLastTakenPicture() : this.renderGalleryIcon();
-        //const content = this.state.galleryVisibile ? this.renderGallery() : this.renderGalleryIcon();
+
         return (
             <View style={styles.container}>
                 <Text style={styles.title}>Welcome to Family Photo</Text>
@@ -88,7 +61,6 @@ export class CameraScreen extends React.Component {
         folder: 'main',
         photos: [],
         autoFocus: 'on',
-        JSON: '',
     };
     static navigationOptions = {
         title: 'Camera'
@@ -100,32 +72,33 @@ export class CameraScreen extends React.Component {
     }
 
     takePicture = async function () {
+        //let something = this.props.screenProps.database.photoId
+        let data;
         if (!this.camera) {
             return
         }
         if (this.camera) {
             this.camera.takePictureAsync()
-                // .then(data => {
-                //   return this.state.JSON = JSON.stringify({
-                //     photoId: this.state.photoId,
-                //     uri: data.uri,
-                //     label: this.state.label,
-                //     folder: this.state.folder,
-                //   })
-                // })
-                // .then(data => {
-                //   return FileSystem.moveAsync({
-                //     from: this.state.JSON,
-                //     to: `${FileSystem.documentDirectory}photos/Data_${this.state.photoId}.JSON`,
-                //   });
-                // })
-                .then(data => {
+
+                .then(_data => {
+                    // adding to database
+                    data = _data;
+                    return this.props.screenProps.addToDatabase({
+                        photoId: this.state.photoId,
+                        uri: _data.uri,
+                        label: this.state.label,
+                        folder: this.state.folder,
+                    })
+                })
+                //I parse the
+                .then(() => {
                     return FileSystem.moveAsync({
                         from: data.uri,
                         to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
                     });
                 })
                 .then(() => {
+                    //change to read photoId from last taken picture
                     this.setState({
                         photoId: this.state.photoId + 1
                     });
@@ -134,7 +107,12 @@ export class CameraScreen extends React.Component {
         }
     };
 
+    previewAndSnap() {
+
+    }
+
     render() {
+        console.log(this.props);
         //const photoTaken = this.state.newPhoto ? renderPreviewForm() : null;
         const { navigate } = this.props.navigation;
         return (
