@@ -109,7 +109,7 @@ export class CameraScreen extends React.Component {
     };
 
     render() {
-        console.log(this.props.screenProps.database.photos);
+        //console.log(this.props.screenProps.database.photos);
         const { navigate } = this.props.navigation;
         const { hasCameraPermission } = this.state;
         return (

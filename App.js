@@ -49,9 +49,10 @@ export default class App extends Component {
   }
   updateDatabaseLabel(id, label) {
     this.setState({
-      databse: {
+      database: {
         ...this.state.database,
         photos: this.state.database.photos.map(photo => {
+          console.log(photo);
           if (photo.photoId !== id) {
             return photo;
           }
@@ -62,6 +63,7 @@ export default class App extends Component {
         })
       }
     })
+    setTimeout(() => { this.saveToDatabase() }, 100);
     return this.saveToDatabase()
   }
 
@@ -75,11 +77,12 @@ export default class App extends Component {
           }
           return {
             ...photo,
-            label, label
+            label: label
           }
         })
       }
     })
+    setTimeout(() => { this.saveToDatabase() }, 100);
     return this.saveToDatabase()
   }
 
@@ -99,7 +102,7 @@ export default class App extends Component {
         database: this.state.database,
         addToDatabase: this.addToDatabase.bind(this),
         updateDatabaseLabel: this.updateDatabaseLabel.bind(this),
-        //updateDatabaseFolder: this.updateDatabaseFolder.bind(this),
+        updateDatabaseFolder: this.updateDatabaseFolder.bind(this),
       }} />
     );
   }
