@@ -1,25 +1,27 @@
 import React from 'react';
 import {
-    StyleSheet,
     Text,
     View,
+    List,
     Image,
     Modal,
     Button,
+    FlatList,
     TextInput,
     Vibration,
+    StyleSheet,
+    ScrollView,
     AsyncStorage,
     TouchableOpacity,
 } from 'react-native';
 import { Constants, FileSystem, Camera, Permissions } from 'expo';
-import Gallery from './gallery';
 import { StackNavigator } from 'react-navigation';
 
 const images = {
     galleryIcon: require('./image-gallery.png'),
     cameraIcon: require('./photo-camera.png')
 }
-
+const pictureSize = 150;
 export class HomeScreen extends React.Component {
     static navigationOptions = {
         title: 'Welcome'
@@ -41,25 +43,23 @@ export class HomeScreen extends React.Component {
                     <Image style={styles.icon} source={images.galleryIcon} />
                 </TouchableOpacity>
                 <Text style={styles.text}>preview last photo</Text>
-                <TouchableOpacity onPress={() => navigate('Preview')}>
+                {/* <TouchableOpacity onPress={() => navigate('Preview')}>
                     <Text style={styles.text}>preview</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
         );
     }
 }
 
 export class CameraScreen extends React.Component {
+
     state = {
         hasCameraPermission: null,
         permissionsGranted: false,
         type: Camera.Constants.Type.back,
-        //newPhoto: false,
-        //gonna have to make photoId be read from last elment in the JSON file
-        photoId: 1,
         label: 'none',
         folder: 'main',
-        photos: [],
+        photos: 1,
         autoFocus: 'on',
     };
     static navigationOptions = {
@@ -67,54 +67,51 @@ export class CameraScreen extends React.Component {
     };
 
     async componentWillMount() {
+        const { permissions } = Expo;
         const { status } = await Permissions.askAsync(Permissions.CAMERA);
         this.setState({ hasCameraPermissions: status === 'granted' });
+        if (status !== 'granted') {
+            alert('Hey! You might want to enable notifications for my app');
+        }
     }
 
     takePicture = async function () {
-        //let something = this.props.screenProps.database.photoId
+        //let id = this.props.screenProps.database.photoId;
+        let photos = this.props.screenProps.database.photos;
+        let lastPhoto = photos.length;
         let data;
         if (!this.camera) {
             return
         }
         if (this.camera) {
             this.camera.takePictureAsync()
-
                 .then(_data => {
                     // adding to database
                     data = _data;
                     return this.props.screenProps.addToDatabase({
-                        photoId: this.state.photoId,
+                        photoId: lastPhoto,
                         uri: _data.uri,
                         label: this.state.label,
                         folder: this.state.folder,
                     })
                 })
-                //I parse the
                 .then(() => {
+                    //creating a picture jpg to read
                     return FileSystem.moveAsync({
                         from: data.uri,
-                        to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
+                        to: `${FileSystem.documentDirectory}photos/Photo_${lastPhoto}.jpg`,
                     });
                 })
                 .then(() => {
-                    //change to read photoId from last taken picture
-                    this.setState({
-                        photoId: this.state.photoId + 1
-                    });
                     Vibration.vibrate();
                 });
         }
     };
 
-    previewAndSnap() {
-
-    }
-
     render() {
-        console.log(this.props);
-        //const photoTaken = this.state.newPhoto ? renderPreviewForm() : null;
+        console.log(this.props.screenProps.database.photos);
         const { navigate } = this.props.navigation;
+        const { hasCameraPermission } = this.state;
         return (
             <View style={styles.cameraContainer}>
                 <Camera ref={ref => {
@@ -156,16 +153,42 @@ export class PreviewScreen extends React.Component {
     static navigationOptions = {
         title: 'Preview'
     };
+
+    updateLabel() {
+        let photos = this.props.screenProps.database.photos;
+        console.log(this.state.label);
+        console.log(photos.length - 1);
+        return this.props.screenProps.updateDatabaseLabel(
+            photos.length - 1,
+            this.state.label
+        )
+    }
+    updateFolder() {
+        let photos = this.props.screenProps.database.photos;
+        console.log(this.state.folder);
+        return this.props.screenprops.updateDatabaseFolder(
+            photos.length - 1,
+            this.state.folder
+        )
+    }
+
     render() {
+        let photos = this.props.screenProps.database.photos;
+        let lastPhoto = photos.length - 1;
         const { navigate } = this.props.navigation;
         return (
-            <View>
+            <View >
                 <Text>Would you like to Label your photo?</Text>
                 <TextInput
                     style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
                     onChangeText={(label) => this.setState({ label })}
                     value={this.state.label}
                 />
+                <TouchableOpacity
+                    onPress={() => this.updateLabel()}
+                >
+                    <Text style={{ padding: 10, color: 'black', fontSize: 30 }}>SAVE</Text>
+                </TouchableOpacity>
                 <Text>Would you like to put this in a gallery?</Text>
                 {/* list out folders from JSON */}
                 <Text>or make a new gallery?</Text>
@@ -175,11 +198,16 @@ export class PreviewScreen extends React.Component {
                     value={this.state.folder}
                 />
                 <TouchableOpacity
-                    // set newPhoto to false
-                    // update JSON file
-                    onPress={() => navigate('Gallery')}>
-                    <Text style={styles.cameraButton}>SAVE</Text>
+                    onPress={() => this.updateFolder()}
+                >
+                    <Text style={{ padding: 10, color: 'black', fontSize: 30 }}>SAVE</Text>
                 </TouchableOpacity>
+                <Image
+                    style={{ height: 300, width: 300, marginLeft: 50, marginTop: 50 }}
+                    source={{
+                        uri: `${FileSystem.documentDirectory}photos/Photo_${lastPhoto}.jpg`
+                    }}
+                />
             </View>
         )
     }
@@ -189,13 +217,58 @@ export class GalleryScreen extends React.Component {
     static navigationOptions = {
         title: 'Gallery'
     };
+    state = {
+        images: {},
+        photos: [],
+        photoData: [],
+        folders: [],
+        labels: [],
+    };
+    componentDidMount() {
+        FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'photos').then(photos => {
+            this.setState({
+                photos,
+            });
+        })
+    }
     render() {
         const { navigate } = this.props.navigation;
+        const photoData = this.props.screenProps.database.photos;
         return (
-            <Gallery />
+            <View style={styles.container}>
+                <ScrollView contentComponentStyle={{ flex: 1 }}>
+                    <View style={styles.pictures}>
+                        {this.state.photos.map(photoUri => (
+                            <View style={styles.pictureWrapper} key={photoUri}>
+                                <Image
+                                    key={photoUri}
+                                    style={styles.picture}
+                                    source={{
+                                        uri: `${FileSystem.documentDirectory}photos/${photoUri}`,
+                                    }}
+                                />
+                            </View>
+                        ))}
+                    </View>
+                    {/* <List>
+                        <FlatList
+                            data={photoData}
+                            renderItem={({ item }) => (
+                                <listItem
+                                    roundAvatar
+                                    title={`${item.label}`}
+                                    subtitle={`${item.folder}`}
+                                    avatar={{ uri: item.uri }}
+                                />
+                            )}
+                        />
+                    </List> */}
+                </ScrollView>
+            </View>
         );
     }
 }
+
 
 export const Routes = StackNavigator({
     Home: { screen: HomeScreen },
@@ -249,5 +322,23 @@ const styles = StyleSheet.create({
     },
     innerContainer: {
         alignItems: 'center',
+    },
+    pictures: {
+        flex: 1,
+        flexWrap: 'wrap',
+        flexDirection: 'row',
+    },
+    picture: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        left: 0,
+        top: 0,
+        resizeMode: 'contain',
+    },
+    pictureWrapper: {
+        width: pictureSize,
+        height: pictureSize,
+        margin: 5,
     },
 });

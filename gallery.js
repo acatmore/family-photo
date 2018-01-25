@@ -1,12 +1,14 @@
 
 import React from 'react';
 import {
-  Image,
-  StyleSheet,
-  View,
-  TouchableOpacity,
   Text,
-  ScrollView
+  List,
+  View,
+  Image,
+  FlatList,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { FileSystem } from 'expo';
 
@@ -16,23 +18,24 @@ export default class Gallery extends React.Component {
   state = {
     images: {},
     photos: [],
-    data: [],
+    photoData: this.props.screenProps.database.photos,
+    folders: [],
+    labels: [],
   };
-
+  //this.props.screenProps.database.photos
   componentDidMount() {
     FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'photos').then(photos => {
       this.setState({
         photos,
       });
-    }),
-      FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'photos/data.JSON').then(data => {
-        this.setState({
-          data,
-        }),
-          console.log(data);
-      });
+    })
   }
-
+  // FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'photos/data.JSON')
+  // .then(data => {
+  //   this.setState({
+  //     data,
+  //   })
+  // });
   render() {
     return (
       <View style={styles.container}>
@@ -49,15 +52,19 @@ export default class Gallery extends React.Component {
                 />
               </View>
             ))}
-            {/* {this.state.data.map(label => (
-              <View key={label}>
-                <FlatList
-                  data={[label]}
-                  renderItem={({ item }) => <Text>{item.label}
-                  </Text>}
-                />
-              </View>
-            ))} */}
+            <List>
+              <FlatList
+                data={this.state.photoData}
+                renderItem={({ item }) => (
+                  <listItem
+                    roundAvatar
+                    title={`${item.photoId}`}
+                    subtitle={`${item.label}`}
+                    avatar={{ uri: item.uri }}
+                  />
+                )}
+              />
+            </List>
           </View>
         </ScrollView>
       </View>

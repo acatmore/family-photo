@@ -1,9 +1,6 @@
 import React, { Component } from 'react';
-import {
-  Routes
-} from './routes';
+import { Routes } from './routes';
 import { View } from "react-native";
-import Gallery from './gallery';
 import { StackNavigator } from 'react-navigation';
 import { Constants, FileSystem, Camera, Permissions } from 'expo';
 
@@ -17,7 +14,7 @@ export default class App extends Component {
     //delete old local files
     // FileSystem.deleteAsync(FileSystem.documentDirectory + 'photos').catch(e => {
     //   console.log(e, 'Directory and files deleted');
-    // }),
+    // });
     FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos').catch(e => {
       // console.log(e, 'Directory exists');
     })
@@ -50,12 +47,48 @@ export default class App extends Component {
     })
     return this.saveToDatabase()
   }
+  updateDatabaseLabel(id, label) {
+    this.setState({
+      databse: {
+        ...this.state.database,
+        photos: this.state.database.photos.map(photo => {
+          if (photo.photoId !== id) {
+            return photo;
+          }
+          return {
+            ...photo,
+            label: label
+          }
+        })
+      }
+    })
+    return this.saveToDatabase()
+  }
+
+  updateDatabaseFolder(id, folder) {
+    this.setState({
+      database: {
+        ...this.state.database,
+        photos: this.state.database.photos.map(photo => {
+          if (photo.photoId !== id) {
+            return photo;
+          }
+          return {
+            ...photo,
+            label, label
+          }
+        })
+      }
+    })
+    return this.saveToDatabase()
+  }
 
   saveToDatabase() {
     return FileSystem.writeAsStringAsync(database, JSON.stringify(this.state.database))
   }
 
   render() {
+    //console.log(this.props.database.photos[1].folder);
     if (!this.state.database) {
       return (
         <View></View>
@@ -65,6 +98,8 @@ export default class App extends Component {
       <Routes screenProps={{
         database: this.state.database,
         addToDatabase: this.addToDatabase.bind(this),
+        updateDatabaseLabel: this.updateDatabaseLabel.bind(this),
+        //updateDatabaseFolder: this.updateDatabaseFolder.bind(this),
       }} />
     );
   }
