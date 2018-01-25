@@ -10,6 +10,7 @@ import {
   Image,
   Modal,
   Button,
+  TextInput,
   Vibration,
   AsyncStorage,
   TouchableOpacity,
@@ -35,6 +36,8 @@ class HomeScreen extends React.Component {
     hasCameraPermission: null,
     permissionsGranted: false,
     type: Camera.Constants.Type.back,
+    label: 'none',
+    folder: 'main',
     photoId: 1,
     photos: [],
     autoFocus: 'on',
@@ -47,66 +50,64 @@ class HomeScreen extends React.Component {
   }
 
   componentDidMount() {
+    //delete old local files
+    // FileSystem.deleteAsync(FileSystem.documentDirectory + 'photos').catch(e => {
+    //   console.log(e, 'Directory and files deleted');
+    // }),
     FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos').catch(e => {
       console.log(e, 'Directory exists');
     });
+    // FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos/data.JSON').catch(e => {
+    //   console.log(e, 'JSON exists');
+    // });
   }
 
   takePicture = async function () {
+    if (!this.camera) {
+      return
+    }
     if (this.camera) {
       this.camera.takePictureAsync()
         .then(data => {
+          return JSON.stringify({
+            photoId: this.state.photoId,
+            uri: data.uri,
+            label: this.state.label,
+            folder: this.state.folder,
+          })
+        })
+        .then(data => {
+          return FileSystem.moveAsync({
+            from: this.state.JSON,
+            to: `${FileSystem.documentDirectory}photos/data.JSON`,
+          });
+        })
+        .then(data => {
           //before the move, preview screen pops up
           //ask for title and save
-          FileSystem.moveAsync({
+          return FileSystem.moveAsync({
             from: data.uri,
             to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
-          }).then(() => {
-            this.setState({
-              photoId: this.state.photoId + 1
-            });
-            Vibration.vibrate();
-          }).then(this.printImageUri(data.uri))
-            .catch(err => console.error("error: " + err));
+          });
+        })
+        .then(() => {
+          this.setState({
+            photoId: this.state.photoId + 1
+          });
+          console.log(`${FileSystem.documentDirectory}photos/data.JSON`);
+          Vibration.vibrate();
         });
     }
   };
 
-  deleteAllGallery = async function () {
-    FileSystem.deleteAsync(FileSystem.documentDirectory + 'photos').catch(e => {
-      console.log(e, 'Directory and files deleted');
-    })
-  };
-
-  printImageUri(imagePath) {
-    console.log(imagePath)
-  }
-
   toggleCamera() {
     this.setState({ cameraVisible: !this.state.cameraVisible });
-  }
-
-  renderGallery() {
-    return
-    <Gallery />;
-  }
-  renderGalleryIcon() {
-    return <Image style={styles.icon} source={images.galleryIcon} />;
-  }
-
-  renderLastTakenPicture() {
-    return
-    <Image
-      style={styles.icon}
-      source={{
-        uri: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`
-      }} />;
   }
   render() {
     const { navigate } = this.props.navigation;
     //const preview = this.state.previewVisibile ? this.renderPreview() : null;
-    const image = this.state.photoId > 1 ? this.renderLastTakenPicture() : this.renderGalleryIcon();
-    const content = this.state.galleryVisibile ? this.renderGallery() : this.renderGalleryIcon();
+    //const image = this.state.photoId > 1 ? this.renderLastTakenPicture() : this.renderGalleryIcon();
+    //const content = this.state.galleryVisibile ? this.renderGallery() : this.renderGalleryIcon();
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Welcome to Family Photo</Text>
@@ -138,31 +139,168 @@ class HomeScreen extends React.Component {
                 >
                   <Text style={styles.cameraButton}>SNAP</Text>
                 </TouchableOpacity>
-                {/* <View> {preview} </View> */}
               </View>
-              <TouchableOpacity
-                onPress={() => this.toggleCamera()}
-              >
-                <Text style={styles.cameraButton}>Close Camera</Text>
+              <TouchableOpacity onPress={() => this.toggleCamera()}>
+                <Text style={styles.cameraButton}>close</Text>
               </TouchableOpacity>
             </Camera>
           </View>
         </Modal>
 
+        {/* <TouchableOpacity onPress={() => navigate('Camera')}>
+          <Image style={styles.icon} source={images.cameraIcon} />
+        </TouchableOpacity> */}
         <TouchableOpacity onPress={() => this.toggleCamera()}>
           <Image style={styles.icon} source={images.cameraIcon} />
         </TouchableOpacity>
-        {/* <TouchableOpacity onPress={() => this.deleteAllGallery.bind(this)}>
-          <Text style={styles.text}> delete directory</Text>
-        </TouchableOpacity> */}
-        {/* <Text style={styles.text}> last taken photo </Text> */}
+
         <Text style={styles.text}> View existing pictures</Text>
         <TouchableOpacity onPress={() => navigate('Gallery')}>
           <Image style={styles.icon} source={images.galleryIcon} />
-          {/* <View style={styles.imageContainer}>{content}</View> */}
+        </TouchableOpacity>
+        <Text style={styles.text}>preview last photo</Text>
+        <TouchableOpacity onPress={() => navigate('Preview')}>
+          <Text style={styles.text}>preview</Text>
         </TouchableOpacity>
       </View>
     );
+  }
+}
+
+class CameraScreen extends React.Component {
+  state = {
+    hasCameraPermission: null,
+    permissionsGranted: false,
+    type: Camera.Constants.Type.back,
+    //newPhoto: false,
+    //gonna have to make photoId be read from last elment in the JSON file
+    photoId: 1,
+    label: 'none',
+    folder: 'main',
+    photos: [],
+    autoFocus: 'on',
+  };
+  static navigationOptions = {
+    title: 'Camera'
+  };
+
+  async componentWillMount() {
+    const { status } = await Permissions.askAsync(Permissions.CAMERA);
+    this.setState({ hasCameraPermissions: status === 'granted' });
+  }
+
+  takePicture = async function () {
+    if (!this.camera) {
+      return
+    }
+    if (this.camera) {
+      this.camera.takePictureAsync()
+        .then(data => {
+          //before the move, preview screen pops up
+          //ask for title and save
+          return FileSystem.moveAsync({
+            from: data.uri,
+            to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
+          });
+        })
+        .then(() => {
+          this.setState({
+            photoId: this.state.photoId + 1
+          });
+          Vibration.vibrate();
+        });
+    }
+  };
+
+  // .then(data => {
+  // JSON.stringify({
+  // photoId: this.state.photoId,
+  // uri: data.uri,
+  // label: this.state.label,
+  // folder: this.state.folder,
+  // });
+  // })
+
+  // .then(() => {
+  // this.setState({
+  // newPhoto: true,
+  // });
+  // });
+
+  // renderPreviewForm() {
+  // this.navigate('Preview');
+  // }
+
+  render() {
+    //const photoTaken = this.state.newPhoto ? renderPreviewForm() : null;
+    const { navigate } = this.props.navigation;
+    return (
+      <View style={styles.cameraContainer}>
+        <Camera ref={ref => {
+          this.camera = ref;
+        }}
+          autoFocus={this.state.autoFocus}
+          type={this.state.type}
+          style={{
+            flex: 1,
+          }} style={{ flex: 1 }} type={this.state.type}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: 'transparent',
+            }}>
+            <TouchableOpacity
+              onPress={() => this.takePicture.bind(this)}
+            >
+              <Text style={styles.cameraButton}>SNAP</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            onPress={() => navigate('Preview')}
+          >
+            <Text style={styles.cameraButton}>Preview</Text>
+          </TouchableOpacity>
+        </Camera>
+      </View>
+    )
+  };
+}
+
+
+class PreviewScreen extends React.Component {
+  state = {
+    label: 'none',
+    folder: 'main',
+  }
+  static navigationOptions = {
+    title: 'Preview'
+  };
+  render() {
+    const { navigate } = this.props.navigation;
+    return (
+      <View>
+        <Text>Would you like to Label your photo?</Text>
+        <TextInput
+          style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
+          onChangeText={(label) => this.setState({ label })}
+          value={this.state.label}
+        />
+        <Text>Would you like to put this in a gallery?</Text>
+        {/* list out folders from JSON */}
+        <Text>or make a new gallery?</Text>
+        <TextInput
+          style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
+          onChangeText={(folder) => this.setState({ folder })}
+          value={this.state.folder}
+        />
+        <TouchableOpacity
+          // set newPhoto to false
+          // update JSON file
+          onPress={() => navigate('Gallery')}>
+          <Text style={styles.cameraButton}>SAVE</Text>
+        </TouchableOpacity>
+      </View>
+    )
   }
 }
 
@@ -181,38 +319,17 @@ class GalleryScreen extends React.Component {
 export const Home = StackNavigator({
   Home: { screen: HomeScreen },
   Gallery: { screen: GalleryScreen },
+  Camera: { screen: CameraScreen },
+  Preview: { screen: PreviewScreen },
 });
 
 export default class App extends Component {
-
-  // renderPreview() {
-  //   <View>
-  //     {/* <Text>Label it?</Text> */}
-  //     <Image
-  //       style={styles.icon}
-  //       source={{
-  //         uri: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`
-  //       }} />
-  //   </View>;
-  // }
-
-  // renderNoPermissions() {
-  //   return (
-  //     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 10 }}>
-  //       <Text style={{ color: 'black' }}>
-  //         Camera permissions not granted - cannot open camera preview.
-  //       </Text>
-  //     </View>
-  //   );
-  // }
-
   render() {
     return (
       <Home />
     );
   }
 }
-
 
 const styles = StyleSheet.create({
   container: {

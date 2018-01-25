@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { FileSystem } from 'expo';
 
-const pictureSize = 50;
+const pictureSize = 150;
 
 export default class Gallery extends React.Component {
   state = {
@@ -62,11 +62,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   picture: {
-    // position: 'absolute',
-    // bottom: 0,
-    // right: 0,
-    // left: 0,
-    // top: 0,
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    left: 0,
+    top: 0,
     resizeMode: 'contain',
   },
   pictureWrapper: {
