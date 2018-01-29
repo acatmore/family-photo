@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import {
   Text,
   List,
@@ -8,9 +7,9 @@ import {
   FlatList,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-} from 'react-native';
-import { FileSystem } from 'expo';
+  TouchableOpacity
+} from "react-native";
+import { FileSystem } from "expo";
 
 const pictureSize = 150;
 
@@ -20,15 +19,17 @@ export default class Gallery extends React.Component {
     photos: [],
     photoData: this.props.screenProps.database.photos,
     folders: [],
-    labels: [],
+    labels: []
   };
   //this.props.screenProps.database.photos
   componentDidMount() {
-    FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'photos').then(photos => {
-      this.setState({
-        photos,
-      });
-    })
+    FileSystem.readDirectoryAsync(FileSystem.documentDirectory + "photos").then(
+      photos => {
+        this.setState({
+          photos
+        });
+      }
+    );
   }
   // FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'photos/data.JSON')
   // .then(data => {
@@ -47,7 +48,7 @@ export default class Gallery extends React.Component {
                   key={photoUri}
                   style={styles.picture}
                   source={{
-                    uri: `${FileSystem.documentDirectory}photos/${photoUri}`,
+                    uri: `${FileSystem.documentDirectory}photos/${photoUri}`
                   }}
                 />
               </View>
@@ -75,24 +76,24 @@ export default class Gallery extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 20,
+    paddingTop: 20
   },
   pictures: {
     flex: 1,
-    flexWrap: 'wrap',
-    flexDirection: 'row',
+    flexWrap: "wrap",
+    flexDirection: "row"
   },
   picture: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
     left: 0,
     top: 0,
-    resizeMode: 'contain',
+    resizeMode: "contain"
   },
   pictureWrapper: {
     width: pictureSize,
     height: pictureSize,
-    margin: 5,
-  },
+    margin: 5
+  }
 });

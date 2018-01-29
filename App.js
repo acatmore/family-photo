@@ -1,41 +1,44 @@
-import React, { Component } from 'react';
-import { Routes } from './routes';
+import React, { Component } from "react";
+import { Routes } from "./routes";
 import { View } from "react-native";
-import { StackNavigator } from 'react-navigation';
-import { Constants, FileSystem, Camera, Permissions } from 'expo';
+import { StackNavigator } from "react-navigation";
+import { Constants, FileSystem, Camera, Permissions } from "expo";
 
-const database = FileSystem.documentDirectory + 'photos/database.json';
+const database = FileSystem.documentDirectory + "photos/database.json";
 
 export default class App extends Component {
   state = {
-    database: null,
-  }
+    database: null
+  };
   componentDidMount() {
     //delete old local files
     // FileSystem.deleteAsync(FileSystem.documentDirectory + 'photos').catch(e => {
     //   console.log(e, 'Directory and files deleted');
     // });
-    FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos').catch(e => {
-      // console.log(e, 'Directory exists');
-    })
-      .then(() => {
-        return FileSystem.getInfoAsync(database)
+    FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + "photos")
+      .catch(e => {
+        // console.log(e, 'Directory exists');
       })
-      .then((details) => {
+      .then(() => {
+        return FileSystem.getInfoAsync(database);
+      })
+      .then(details => {
         if (!details.exists) {
-          return FileSystem.writeAsStringAsync(database, JSON.stringify({ photos: [] }))
+          return FileSystem.writeAsStringAsync(
+            database,
+            JSON.stringify({ photos: [] })
+          );
         }
       })
       .then(() => {
-        return FileSystem.readAsStringAsync(database)
+        return FileSystem.readAsStringAsync(database);
       })
-      .then((jsonString) => {
+      .then(jsonString => {
         const data = JSON.parse(jsonString);
         this.setState({
           database: data
-        })
-      })
-
+        });
+      });
   }
 
   addToDatabase(photo) {
@@ -44,8 +47,8 @@ export default class App extends Component {
         ...this.state.database,
         photos: [...this.state.database.photos, photo]
       }
-    })
-    return this.saveToDatabase()
+    });
+    return this.saveToDatabase();
   }
   updateDatabaseLabel(id, label) {
     this.setState({
@@ -59,12 +62,14 @@ export default class App extends Component {
           return {
             ...photo,
             label: label
-          }
+          };
         })
       }
-    })
-    setTimeout(() => { this.saveToDatabase() }, 100);
-    return this.saveToDatabase()
+    });
+    setTimeout(() => {
+      this.saveToDatabase();
+    }, 100);
+    return this.saveToDatabase();
   }
 
   updateDatabaseFolder(id, folder) {
@@ -72,39 +77,44 @@ export default class App extends Component {
       database: {
         ...this.state.database,
         photos: this.state.database.photos.map(photo => {
+          console.log(photo);
           if (photo.photoId !== id) {
             return photo;
           }
           return {
             ...photo,
-            label: label
-          }
+            folder: folder
+          };
         })
       }
-    })
-    setTimeout(() => { this.saveToDatabase() }, 100);
-    return this.saveToDatabase()
+    });
+    setTimeout(() => {
+      this.saveToDatabase();
+    }, 100);
+    return this.saveToDatabase();
   }
 
   saveToDatabase() {
-    return FileSystem.writeAsStringAsync(database, JSON.stringify(this.state.database))
+    return FileSystem.writeAsStringAsync(
+      database,
+      JSON.stringify(this.state.database)
+    );
   }
 
   render() {
     //console.log(this.props.database.photos[1].folder);
     if (!this.state.database) {
-      return (
-        <View></View>
-      )
+      return <View />;
     }
     return (
-      <Routes screenProps={{
-        database: this.state.database,
-        addToDatabase: this.addToDatabase.bind(this),
-        updateDatabaseLabel: this.updateDatabaseLabel.bind(this),
-        updateDatabaseFolder: this.updateDatabaseFolder.bind(this),
-      }} />
+      <Routes
+        screenProps={{
+          database: this.state.database,
+          addToDatabase: this.addToDatabase.bind(this),
+          updateDatabaseLabel: this.updateDatabaseLabel.bind(this),
+          updateDatabaseFolder: this.updateDatabaseFolder.bind(this)
+        }}
+      />
     );
   }
 }
-
