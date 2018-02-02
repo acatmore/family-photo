@@ -48,7 +48,7 @@ export class HomeScreen extends React.Component {
         </TouchableOpacity>
 
         <Text style={styles.text}> View existing pictures</Text>
-        <TouchableOpacity onPress={() => navigate("Gallery")}>
+        <TouchableOpacity onPress={() => navigate("GroupGallery")}>
           <Image style={styles.icon} source={images.galleryIcon} />
         </TouchableOpacity>
         <Text style={styles.text}>preview last photo</Text>
@@ -66,7 +66,7 @@ export class CameraScreen extends React.Component {
     permissionsGranted: false,
     type: Camera.Constants.Type.back,
     label: "none",
-    folder: "main",
+    folder: "misc.",
     photos: 1,
     autoFocus: "on"
   };
@@ -214,12 +214,41 @@ export class PreviewScreen extends React.Component {
   }
 }
 
-export class GalleryScreen extends React.Component {
+export class GalleryGroupingsScreen extends React.Component {
   static navigationOptions = {
     title: "Gallery"
   };
-  state = {
-    images: {}
+
+  render() {
+    const { navigate } = this.props.navigation;
+    const { database } = this.props.screenProps;
+    //get rid of duplicate folders for display mapping
+    const uniqueDatabase = [
+      ...new Set(database.photos.map(photo => photo.folder))
+    ];
+    return (
+      <View style={styles.container}>
+        <ScrollView contentCompentStyle={{ flex: 1 }}>
+          {uniqueDatabase.map(folder => (
+            <TouchableOpacity key={folder}>
+              <Text
+                key={folder}
+                style={styles.text}
+                onPress={photo => navigate("gallery", `${folder}`)}
+              >
+                {folder}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }
+}
+
+export class GalleryScreen extends React.Component {
+  static navigationOptions = {
+    title: "folder"
   };
 
   render() {
@@ -229,6 +258,7 @@ export class GalleryScreen extends React.Component {
       <View style={styles.container}>
         <ScrollView contentComponentStyle={{ flex: 1 }}>
           <View style={styles.pictures}>
+            {/* this.props.navigation.state.params.user.name */}
             {database.photos.map(photo => (
               <View style={styles.pictureWrapper} key={photo.photoId}>
                 <Text key={photo.label} style={styles.text}>
@@ -254,10 +284,12 @@ export class GalleryScreen extends React.Component {
 
 export const Routes = StackNavigator({
   Home: { screen: HomeScreen },
-  Gallery: { screen: GalleryScreen },
   Camera: { screen: CameraScreen },
-  Preview: { screen: PreviewScreen }
+  Preview: { screen: PreviewScreen },
+  GroupGallery: { screen: GalleryGroupingsScreen },
+  Gallery: { screen: GalleryScreen }
 });
+// path: `${this.state.database.photos.folder}`
 
 const styles = StyleSheet.create({
   container: {
