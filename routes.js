@@ -51,7 +51,7 @@ export class HomeScreen extends React.Component {
         <TouchableOpacity onPress={() => navigate("GroupGallery")}>
           <Image style={styles.icon} source={images.galleryIcon} />
         </TouchableOpacity>
-        <Text style={styles.text}>preview last photo</Text>
+        {/* <Text style={styles.text}>preview last photo</Text> */}
         {/* <TouchableOpacity onPress={() => navigate('Preview')}>
                     <Text style={styles.text}>preview</Text>
                 </TouchableOpacity> */}
@@ -234,7 +234,7 @@ export class GalleryGroupingsScreen extends React.Component {
               <Text
                 key={folder}
                 style={styles.text}
-                onPress={photo => navigate("gallery", `${folder}`)}
+                onPress={photo => navigate("Gallery", { folder: `${folder}` })}
               >
                 {folder}
               </Text>
@@ -250,16 +250,21 @@ export class GalleryScreen extends React.Component {
   static navigationOptions = {
     title: "folder"
   };
-
+  //`${this.props.navigation.params.folder}`
   render() {
     const { navigate } = this.props.navigation;
     const { database } = this.props.screenProps;
+    const currentFolder = this.props.navigation.state.params.folder;
+    const gallery = database.photos.filter(
+      photo => photo.folder === currentFolder
+    );
+    console.log(currentFolder);
+    console.log(gallery);
     return (
       <View style={styles.container}>
         <ScrollView contentComponentStyle={{ flex: 1 }}>
           <View style={styles.pictures}>
-            {/* this.props.navigation.state.params.user.name */}
-            {database.photos.map(photo => (
+            {gallery.map(photo => (
               <View style={styles.pictureWrapper} key={photo.photoId}>
                 <Text key={photo.label} style={styles.text}>
                   {photo.label}
@@ -287,7 +292,7 @@ export const Routes = StackNavigator({
   Camera: { screen: CameraScreen },
   Preview: { screen: PreviewScreen },
   GroupGallery: { screen: GalleryGroupingsScreen },
-  Gallery: { screen: GalleryScreen }
+  Gallery: { screen: GalleryScreen, path: "folder/:folder" }
 });
 // path: `${this.state.database.photos.folder}`
 
