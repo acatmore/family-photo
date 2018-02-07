@@ -31,11 +31,6 @@ export class HomeScreen extends React.Component {
     title: "Welcome"
   };
 
-  //   static propTypes = {
-  //     sceneId: PropTypes.string.isRequired,
-  //     scene: PropTypes.object
-  //   };
-
   render() {
     const { navigate } = this.props.navigation;
 
@@ -51,10 +46,6 @@ export class HomeScreen extends React.Component {
         <TouchableOpacity onPress={() => navigate("GroupGallery")}>
           <Image style={styles.icon} source={images.galleryIcon} />
         </TouchableOpacity>
-        {/* <Text style={styles.text}>preview last photo</Text> */}
-        {/* <TouchableOpacity onPress={() => navigate('Preview')}>
-                    <Text style={styles.text}>preview</Text>
-                </TouchableOpacity> */}
       </View>
     );
   }
@@ -62,13 +53,14 @@ export class HomeScreen extends React.Component {
 
 export class CameraScreen extends React.Component {
   state = {
-    hasCameraPermission: null,
-    permissionsGranted: false,
+    hasCameraPermission: false,
+    permissionsGranted: true,
     type: Camera.Constants.Type.back,
     label: "none",
     folder: "misc.",
     photos: 1,
-    autoFocus: "on"
+    autoFocus: "on",
+    zoom: 0
   };
   static navigationOptions = {
     title: "Camera"
@@ -76,13 +68,22 @@ export class CameraScreen extends React.Component {
   //look at expo
   async componentWillMount() {
     const { status } = await Permissions.askAsync(Permissions.CAMERA);
-    this.setState({ hasCameraPermissions: status === "granted" });
+    this.setState({ hasCameraPermission: status === "granted" });
     if (status !== "granted") {
-      alert("Hey! You might want to enable notifications for my app");
+      alert("Hey! You might want to enable your camera for my app");
     }
   }
 
-  takePicture = async function() {
+  toggleFacing() {
+    this.setState({
+      type:
+        this.state.type === Camera.Constants.Type.back
+          ? Camera.Constants.Type.front
+          : Camera.Constants.Type.back
+    });
+  }
+
+  takePicture = async () => {
     let photos = this.props.screenProps.database.photos;
     let lastPhoto = photos.length;
     let data;
@@ -126,6 +127,7 @@ export class CameraScreen extends React.Component {
           }}
           autoFocus={this.state.autoFocus}
           type={this.state.type}
+          zoom={this.state.zoom}
           style={{
             flex: 1
           }}
@@ -138,6 +140,9 @@ export class CameraScreen extends React.Component {
           >
             <TouchableOpacity onPress={this.takePicture.bind(this)}>
               <Text style={styles.cameraButton}>SNAP</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={this.toggleFacing.bind(this)}>
+              <Text style={styles.cameraButton}>FLIP</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={() => navigate("Preview")}>
@@ -191,7 +196,6 @@ export class PreviewScreen extends React.Component {
           </Text>
         </TouchableOpacity>
         <Text>Would you like to put this in a gallery?</Text>
-        {/* list out folders from JSON, use tabNaviagtor */}
         <Text>or make a new gallery?</Text>
         <TextInput
           style={{ height: 40, borderColor: "gray", borderWidth: 1 }}
@@ -250,7 +254,6 @@ export class GalleryScreen extends React.Component {
   static navigationOptions = {
     title: "folder"
   };
-  //`${this.props.navigation.params.folder}`
   render() {
     const { navigate } = this.props.navigation;
     const { database } = this.props.screenProps;
@@ -258,8 +261,6 @@ export class GalleryScreen extends React.Component {
     const gallery = database.photos.filter(
       photo => photo.folder === currentFolder
     );
-    console.log(currentFolder);
-    console.log(gallery);
     return (
       <View style={styles.container}>
         <ScrollView contentComponentStyle={{ flex: 1 }}>
@@ -292,8 +293,9 @@ export const Routes = StackNavigator({
   Camera: { screen: CameraScreen },
   Preview: { screen: PreviewScreen },
   GroupGallery: { screen: GalleryGroupingsScreen },
-  Gallery: { screen: GalleryScreen, path: "folder/:folder" }
+  Gallery: { screen: GalleryScreen }
 });
+//path: "folder/:folder"
 // path: `${this.state.database.photos.folder}`
 
 const styles = StyleSheet.create({

@@ -102,7 +102,6 @@ export default class App extends Component {
   }
 
   render() {
-    //console.log(this.props.database.photos[1].folder);
     if (!this.state.database) {
       return <View />;
     }
